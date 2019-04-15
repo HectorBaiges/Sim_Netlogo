@@ -32,7 +32,6 @@ breed [Fenomens Fenomen]
 Aranyes-own[
   target
   menjant
-  SenseMenjar
   ]
 
 to setup
@@ -67,10 +66,12 @@ to setup
     set shape "spider"
     set color blue
     set size 6
-    set Vida 0
+    set Vida 200
     set Velocitat 2
-    set SenseMenjar 0
-    set target one-of Papallones
+    set Inanició 0
+    set Fertilitat 800
+    set PeriodeFertilitat -1
+    set menjant -1
   ]
   create-Granotes GranotesTotal[
     setxy random-xcor random-ycor
@@ -125,10 +126,7 @@ to setup
 end
 
 to buscar
-  ask aranyes[
-    set Vida Vida + 500
-    set color green
-  ]
+
 end
 
 to go
@@ -149,55 +147,126 @@ to aranyes-go ;
 
   ifelse show-Vida
     [
-      set label Vida
-      set label SenseMenjar
+      set label menjant
      ]
     [set label ""]
 
-  ifelse (Vida >= 2000) or (SenseMenjar >= 1500)
-  [morir]
+  ifelse (Vida >= 2000) or (Inanició >= 1500)
+  [die]
   [
     set Vida Vida + 1
-    set SenseMenjar SenseMenjar + 1
+    set Inanició Inanició + 1
   ]
+
   ifelse Vida < 200
   [set velocitat 3]
   [set velocitat 2]
-  moure-aranya
-  eat-aranya
-  reproducio-aranya
+
+  if (aigua and vida < 1000)
+    [die]
+
+  if vida = fertilitat  or vida = (fertilitat + fertilitat)[;vida = 800 or vida = 1600
+    set PeriodeFertilitat 0
+  ]
+  aranya-moure
+  aranya-eat
+  aranya-reproducio
+  aranya-teranyina
 end
 
-to moure-aranya ;
-  ifelse (count Papallones in-radius 12 > 0)[
-    set target one-of Papallones
-      face target]
+to aranya-moure ;
+  ;; if xcor != 0 and ycor != 0 [
+    ;;facexy 0 0
+    ;;fd velocitat
+  ;;]
+  ifelse menjant >= 0
+  [
+    set menjant menjant + 1
+    if menjant >= 5[set menjant -1]
+  ]
+  [
+    ifelse (vida < 1000)
     [
-    rt random-float 90 - random-float 90
+      if not is-patch? patch-ahead 2 or [aigua] of patch-ahead 2 = true
+      [
+        back velocitat
+        rt 180
+      ]
     ]
-    fd velocitat
-  if vida < 1000 [
-  ]
+    [
 
+    ]
+    ifelse (count aranyes in-radius 15 > 1)
+    [
+      set target one-of  aranyes in-radius 15
+      face target
+      ifelse count aranyes-here > 1
+      [fd 0]
+      [fd velocitat]
+    ]
+    [
+      ifelse (count Papallones in-radius 15 > 0)
+      [
+        set target one-of Papallones in-radius 15
+        face target
+      ]
+      [
+        rt random-float 90 - random-float 90
+      ]
+      fd velocitat
+    ]
+    ]
+  ;;]
 end
 
-to eat-aranya;
+to aranya-eat;
 
-  if (count Papallones-here > 0)[
-    ask patches in-radius 3
-      [ set pcolor red ]
-    set menjant 1
+  if (count Papallones-here > 0 and count Papallones-here <= 5 )[
     let presa one-of papallones-here
-    ask presa[ morir]
-    set SenseMenjar 0
-    beep
+    if vida >= 200[
+      ask presa[morir]
+      set menjant 1
+      set Inanició 0
+      beep
+    ]
   ]
 
 end
 
-to reproducio-aranya;
+to aranya-reproducio;
 
+  if PeriodeFertilitat != -1[
+    ifelse PeriodeFertilitat = 25[
+      set PeriodeFertilitat  -1
+    ]
+    [
+      set PeriodeFertilitat PeriodeFertilitat + 1
+    ]
+  ]
+  if PeriodeFertilitat >= 0 and (count aranyes-here > 1) [
+    set PeriodeFertilitat  -1
+    let mare one-of aranyes-here
+    ask mare[
+      hatch 1 [
+        set vida 0
+        set Inanició 0
+        set Fertilitat 800
+        set PeriodeFertilitat -1
+        set Cries 100
+        set MaduresaCries 200
+      ]
+    ]
+  ]
 
+end
+
+to aranya-teranyina;
+  if vida = 1010[
+    ask patches in-radius 5[
+      set teranyina true
+      set pcolor 9
+      ]
+  ]
 end
 
 to moure-generic ; turtle procedure
@@ -267,10 +336,10 @@ to morir
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-328
-60
-841
-574
+348
+70
+861
+584
 -1
 -1
 5.0
@@ -315,9 +384,9 @@ SLIDER
 159
 TalpsTotal
 TalpsTotal
-1
+0
 20
-1.0
+0.0
 1
 1
 NIL
@@ -362,7 +431,7 @@ PapallonesTotal
 PapallonesTotal
 1
 100
-100.0
+1.0
 1
 1
 NIL
@@ -377,7 +446,7 @@ GranotesTotal
 GranotesTotal
 0
 50
-1.0
+0.0
 1
 1
 NIL
@@ -390,9 +459,9 @@ SLIDER
 429
 AranyesTotal
 AranyesTotal
-1
+0
 100
-1.0
+4.0
 1
 1
 NIL
@@ -456,10 +525,10 @@ Ecosistema
 NIL
 NIL
 0.0
-10.0
+1000.0
 0.0
 250.0
-false
+true
 true
 "" ""
 PENS
