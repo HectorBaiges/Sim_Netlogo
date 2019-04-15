@@ -32,6 +32,7 @@ breed [Fenomens Fenomen]
 Aranyes-own[
   target
   menjant
+  te-parella
   ]
 
 to setup
@@ -72,6 +73,7 @@ to setup
     set Fertilitat 800
     set PeriodeFertilitat -1
     set menjant -1
+    set te-parella false
   ]
   create-Granotes GranotesTotal[
     setxy random-xcor random-ycor
@@ -201,7 +203,7 @@ to aranya-moure ;
       set target one-of  aranyes in-radius 15
       face target
       ifelse count aranyes-here > 1
-      [fd 0]
+      [set te-parella true]
       [fd velocitat]
     ]
     [
@@ -220,17 +222,28 @@ to aranya-moure ;
 end
 
 to aranya-eat;
-
-  if (count Papallones-here > 0 and count Papallones-here <= 5 )[
-    let presa one-of papallones-here
-    if vida >= 200[
-      ask presa[morir]
+  if vida >= 200[
+    if (count Papallones-here > 0 and count Papallones-here < 5 )[
+      let presa one-of papallones-here
+      ask presa [ morir-papallones myself]
       set menjant 1
       set Inanició 0
-      beep
+    ]
+    if (count granotes-here > 0)[
+        ask granotes-here [
+          if(vida < 250)[ morir-granotes myself]
+        ]
+      set menjant 1
+      set Inanició 0
+    ]
+    if (count Aranyes-here > 1 and count Aranyes-here < 5 and Inanició > 300 and te-parella = false)[
+      let presa one-of Aranyes-here
+      if (not is-turtle? presa or [vida] of presa < vida )
+      [ask presa [ morir-papallones myself]]
+      set menjant 1
+      set Inanició 0
     ]
   ]
-
 end
 
 to aranya-reproducio;
@@ -268,6 +281,24 @@ to aranya-teranyina;
       ]
   ]
 end
+
+to morir-aranya [qui]
+;comprovar que qui us mata ho pot fer i si és correcte feu un [die] altrament feu ask qui [penalitzats]
+  if is-talp? qui and count aranyes-here < 5 [die]
+  if is-granota? qui and count aranyes-here < 5 [die]
+  if is-Carnivora? qui and count aranyes-here < 5 [die]
+end
+
+to morir-papallones [qui] ; definit per a que funcionin les proves
+;comprovar que qui us mata ho pot fer i si és correcte feu un [die] altrament feu ask qui [penalitzats]
+  die
+end
+
+to morir-granotes [qui] ; definit per a que funcionin les proves
+;comprovar que qui us mata ho pot fer i si és correcte feu un [die] altrament feu ask qui [penalitzats]
+  die
+end
+
 
 to moure-generic ; turtle procedure
    ifelse breed = Flors or breed = Carnivores or breed = Aranyes[
@@ -328,6 +359,10 @@ to eat-generic ;
       beep
     ]
   ]
+end
+
+to penalitzats
+;jo ja m’encarregaré de fer el que toqui
 end
 
 to morir
