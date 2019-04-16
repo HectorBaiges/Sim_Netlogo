@@ -33,6 +33,7 @@ Aranyes-own[
   target
   menjant
   te-parella
+  ha-criat
   ]
 
 to setup
@@ -73,7 +74,7 @@ to setup
     set Fertilitat 800
     set PeriodeFertilitat -1
     set menjant -1
-    set te-parella false
+    set ha-criat false
   ]
   create-Granotes GranotesTotal[
     setxy random-xcor random-ycor
@@ -137,7 +138,7 @@ to go
       eat-generic
   ]
   ask aranyes [
-    aranyes-go
+    aranya-go
     ]
   ask papallones[
     moure-generic
@@ -145,8 +146,7 @@ to go
   tick
 end
 
-to aranyes-go ;
-
+to aranya-go ;
   ifelse show-Vida
     [
       set label menjant
@@ -167,9 +167,16 @@ to aranyes-go ;
   if (aigua and vida < 1000)
     [die]
 
-  if vida = fertilitat  or vida = (fertilitat + fertilitat)[;vida = 800 or vida = 1600
-    set PeriodeFertilitat 0
+  ifelse vida = 800  or vida = 1600
+  [
+    if ha-criat = false
+    [set PeriodeFertilitat 0]
   ]
+  [
+    set ha-criat false
+    set PeriodeFertilitat -1
+  ]
+
   aranya-moure
   aranya-eat
   aranya-reproducio
@@ -187,23 +194,13 @@ to aranya-moure ;
     if menjant >= 5[set menjant -1]
   ]
   [
-    ifelse (vida < 1000)
-    [
-      if not is-patch? patch-ahead 2 or [aigua] of patch-ahead 2 = true
-      [
-        back velocitat
-        rt 180
-      ]
-    ]
-    [
-
-    ]
-    ifelse (count aranyes in-radius 15 > 1)
+    ifelse (count aranyes in-radius 15 > 1 and vida > 200)
     [
       set target one-of  aranyes in-radius 15
       face target
+      set te-parella target
       ifelse count aranyes-here > 1
-      [set te-parella true]
+      []
       [fd velocitat]
     ]
     [
@@ -213,8 +210,25 @@ to aranya-moure ;
         face target
       ]
       [
-        rt random-float 90 - random-float 90
+        ifelse (count granotes in-radius 15 > 0)
+        [
+          let aux one-of granotes in-radius 15
+          if ([vida] of aux < 250 )
+          [
+            set target aux
+            face target
+          ]
+        ]
+        [rt random-float 90 - random-float 90]
       ]
+      ifelse (vida < 1000)
+    [
+      if not is-patch? patch-ahead 3 or [aigua] of patch-ahead 3 = true
+      [
+        rt 180
+        back velocitat
+      ]
+    ][]
       fd velocitat
     ]
     ]
@@ -236,7 +250,7 @@ to aranya-eat;
       set menjant 1
       set Inanició 0
     ]
-    if (count Aranyes-here > 1 and count Aranyes-here < 5 and Inanició > 300 and te-parella = false)[
+    if (count Aranyes-here > 1 and count Aranyes-here < 5 and Inanició > 300 and te-parella != target)[
       let presa one-of Aranyes-here
       if (not is-turtle? presa or [vida] of presa < vida )
       [ask presa [ morir-papallones myself]]
@@ -246,21 +260,20 @@ to aranya-eat;
   ]
 end
 
-to aranya-reproducio;
-
-  if PeriodeFertilitat != -1[
-    ifelse PeriodeFertilitat = 25[
-      set PeriodeFertilitat  -1
-    ]
-    [
-      set PeriodeFertilitat PeriodeFertilitat + 1
-    ]
+to aranya-reproducio
+  if PeriodeFertilitat >= 0[
+    ifelse PeriodeFertilitat = 25
+    [set PeriodeFertilitat -1]
+    [set PeriodeFertilitat PeriodeFertilitat + 1]
   ]
-  if PeriodeFertilitat >= 0 and (count aranyes-here > 1) [
-    set PeriodeFertilitat  -1
+
+  if breed = Aranyes and (count aranyes-here > 1) [
     let mare one-of aranyes-here
-    ask mare[
-      hatch 1 [
+    let vida_mare [vida] of mare
+    if [PeriodeFertilitat] of mare >= 0  and (vida_mare >= 800 and vida_mare <= 825) or (vida_mare = 1600 and vida_mare = 1625)[
+      set PeriodeFertilitat -1
+      set ha-criat  true
+      hatch 100 [
         set vida 0
         set Inanició 0
         set Fertilitat 800
@@ -270,7 +283,6 @@ to aranya-reproducio;
       ]
     ]
   ]
-
 end
 
 to aranya-teranyina;
@@ -284,9 +296,14 @@ end
 
 to morir-aranya [qui]
 ;comprovar que qui us mata ho pot fer i si és correcte feu un [die] altrament feu ask qui [penalitzats]
-  if is-talp? qui and count aranyes-here < 5 [die]
-  if is-granota? qui and count aranyes-here < 5 [die]
-  if is-Carnivora? qui and count aranyes-here < 5 [die]
+  ifelse is-talp? qui and (count aranyes-here < 5 and [vida] of aranyes-here < 1000) [die]
+  [ifelse is-granota? qui and (count aranyes-here < 5 and [vida] of aranyes-here < 1000) [die]
+  [ifelse is-Carnivora? qui and (count aranyes-here < 5 and [vida] of aranyes-here < 1000) [die]
+  [ifelse is-Aranya? qui and (count aranyes-here < 5 and [vida] of aranyes-here < 1000) [die]
+        [ask qui [penalitzats]]
+      ]
+    ]
+  ]
 end
 
 to morir-papallones [qui] ; definit per a que funcionin les proves
@@ -496,7 +513,7 @@ AranyesTotal
 AranyesTotal
 0
 100
-4.0
+10.0
 1
 1
 NIL
@@ -552,15 +569,15 @@ NIL
 HORIZONTAL
 
 PLOT
-20
-444
-297
-875
+886
+73
+1163
+504
 Ecosistema
 NIL
 NIL
 0.0
-1000.0
+10000.0
 0.0
 250.0
 true
