@@ -237,20 +237,20 @@ end
 
 to aranya-eat;
   if vida >= 200[
-    if (count Papallones-here > 0 and count Papallones-here < 5 )[
+    if (count Papallones-here > 0 and count Papallones-here < 5)[
       let presa one-of papallones-here
       ask presa [ morir-papallones myself]
       set menjant 1
       set Inanició 0
     ]
-    if (count granotes-here > 0)[
+    if (count granotes-here > 0 and all? granotes-here [vida < 250])[
         ask granotes-here [
           if(vida < 250)[ morir-granotes myself]
         ]
       set menjant 1
       set Inanició 0
     ]
-    if (count Aranyes-here > 1 and count Aranyes-here < 5 and Inanició > 300 and te-parella != target)[
+    if (count Aranyes-here > 1 and count Aranyes-here < 5 and Inanició > 300 and te-parella != target and all? Aranyes-here [vida < 1000])[
       let presa one-of Aranyes-here
       if (not is-turtle? presa or [vida] of presa < vida )
       [ask presa [ morir-papallones myself]]
@@ -296,10 +296,10 @@ end
 
 to morir-aranya [qui]
 ;comprovar que qui us mata ho pot fer i si és correcte feu un [die] altrament feu ask qui [penalitzats]
-  ifelse is-talp? qui and (count aranyes-here < 5 and [vida] of aranyes-here < 1000) [die]
-  [ifelse is-granota? qui and (count aranyes-here < 5 and [vida] of aranyes-here < 1000) [die]
-  [ifelse is-Carnivora? qui and (count aranyes-here < 5 and [vida] of aranyes-here < 1000) [die]
-  [ifelse is-Aranya? qui and (count aranyes-here < 5 and [vida] of aranyes-here < 1000) [die]
+  ifelse is-talp? qui and (count aranyes-here < 5 or ( count aranyes-here >= 5 and all? Aranyes-here [vida < 1000])) [die]
+  [ifelse is-granota? qui and (count aranyes-here < 5 or ( count aranyes-here >= 5 and all? Aranyes-here [vida < 1000]))  [die]
+  [ifelse is-Carnivora? qui and (count aranyes-here < 5 or ( count aranyes-here >= 5 and all? Aranyes-here [vida < 1000]))  [die]
+  [ifelse is-Aranya? qui and (count aranyes-here < 5 or ( count aranyes-here >= 5 and all? Aranyes-here [vida < 1000]))  [die]
         [ask qui [penalitzats]]
       ]
     ]
