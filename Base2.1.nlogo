@@ -34,6 +34,7 @@ Aranyes-own[
   menjant
   te-parella
   ha-criat
+  desplegar-cries
   ]
 
 to setup
@@ -147,11 +148,11 @@ to go
 end
 
 to aranya-go ;
-  ifelse show-Vida
-    [
-      set label menjant
-     ]
-    [set label ""]
+  ;ifelse show-Vida
+   ; [
+    ;  set label desplegar-cries
+    ; ]
+   ; [set label ""]
 
   ifelse (Vida >= 2000) or (Inanició >= 1500)
   [die]
@@ -162,7 +163,10 @@ to aranya-go ;
 
   ifelse Vida < 200
   [set velocitat 3]
-  [set velocitat 2]
+  [
+    set velocitat 2
+    set desplegar-cries 0
+  ]
 
   if (aigua and vida < 1000)
     [die]
@@ -184,17 +188,14 @@ to aranya-go ;
 end
 
 to aranya-moure ;
-  ;; if xcor != 0 and ycor != 0 [
-    ;;facexy 0 0
-    ;;fd velocitat
-  ;;]
+
   ifelse menjant >= 0
   [
     set menjant menjant + 1
     if menjant >= 5[set menjant -1]
   ]
   [
-    ifelse (count aranyes in-radius 15 > 1 and vida > 200)
+    ifelse (count aranyes in-radius 15 > 1 and desplegar-cries != 1)
     [
       set target one-of  aranyes in-radius 15
       face target
@@ -221,18 +222,24 @@ to aranya-moure ;
         ]
         [rt random-float 90 - random-float 90]
       ]
-      ifelse (vida < 1000)
+      if (vida < 1000)
     [
       if not is-patch? patch-ahead 3 or [aigua] of patch-ahead 3 = true
       [
         rt 180
         back velocitat
       ]
-    ][]
+      ]
+      if count Fenomens in-radius 15 > 0
+      [
+        let perill one-of Fenomens in-radius 15
+        face perill
+        rt 180
+      ]
       fd velocitat
     ]
-    ]
-  ;;]
+  ]
+
 end
 
 to aranya-eat;
@@ -280,6 +287,7 @@ to aranya-reproducio
         set PeriodeFertilitat -1
         set Cries 100
         set MaduresaCries 200
+        set desplegar-cries random 3
       ]
     ]
   ]
@@ -513,7 +521,7 @@ AranyesTotal
 AranyesTotal
 0
 100
-10.0
+3.0
 1
 1
 NIL
